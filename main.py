@@ -5,6 +5,7 @@ import os
 from PIL import Image
 import argparse
 import configparser
+import urllib.request
 
 def get_main_color(image_path):
     """
@@ -48,7 +49,6 @@ def get_watermark_color(image_path):
 
 def download_transformed_image(output_folder, output_file, cloudinary_upload):
     """
-
     :param output_folder: Output folder to download the image to
     :param output_file: Output filename to name the downloaded image
     :param cloudinary_upload: cloudinary upload response (pull the transformed image url from it)
@@ -56,6 +56,9 @@ def download_transformed_image(output_folder, output_file, cloudinary_upload):
     """
     output_path = os.path.join(output_folder, output_file)
     print('Downloading transformed image to: %s' % output_path)
+    transformed_url = cloudinary_upload['url']
+    urllib.request.urlretrieve(transformed_url, output_path)
+    print('Downloaded image')
 
 def iterate_images(input_directory, output_directory,
                    black_watermark_transformation, white_watermark_transformation,
@@ -66,7 +69,7 @@ def iterate_images(input_directory, output_directory,
             continue
         if root is not input_directory and download:
             # Create a duplicate directory on the output folder if we want to download the images at the end
-            output_duplicate = root.replace(input_directory, output_directory) + ' + Resized + Watermarked'
+            output_duplicate = root.replace(input_directory, output_directory) + ' + Resize + Watermark'
             os.makedirs(output_duplicate, exist_ok=True)
         for f in files:
             if f.lower().endswith('.jpg') or f.lower().endswith('.png'):
@@ -110,28 +113,8 @@ def main():
         iterate_images(input_folder, output_folder,
                    black_watermark_transformation,
                    white_watermark_transformation, download=args.download)
-    except cloudinary.api.Error:
-        print('ERROR while uploading to cloudinary, probably connectivity issues')
-    # for root, subdirs, files in os.walk(DIR_NAME):
-    #     if len(files) < 0:
-    #         continue
-    #     # Create a duplicate directory
-    #     new_dir = root.replace(DIR_NAME, OUTPUT_DIR_NAME)
-    #     os.makedirs(new_dir, exist_ok=True)
-    #
-    #     for f in files:
-    #         if f.lower().endswith('.jpg') or f.lower().endswith('png'):
-    #             image_path = os.path.join(root, f)
-    #             print('uploading: ' + image_path)
-    #             watermark_color = get_watermark_color(image_path)
-    #             if watermark_color is 'black':
-    #                 print('Black watermark added')
-    #                 c = cloudinary.uploader.upload(image_path, transformation=["ciaboga_transformation_black"])
-    #                 print(c)
-    #             elif watermark_color is 'white':
-    #                 print('White watermark added')
-    #                 c = cloudinary.uploader.upload(image_path, transformation=["ciaboga_transformation_white"])
-    #                 print(c)
+    except cloudinary.api.Error as e:
+        print('ERROR while uploading to cloudinary, probably connectivity issues: %s' % e)
 
 def parse_arguments():
     """
