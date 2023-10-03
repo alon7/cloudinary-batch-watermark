@@ -1,2 +1,2 @@
 cloudinary==1.8.0
-Pillow==4.2.1
+Pillow==10.0.1
